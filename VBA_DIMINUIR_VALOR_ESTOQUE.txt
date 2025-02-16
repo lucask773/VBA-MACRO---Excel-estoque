@@ -1,0 +1,93 @@
+Sub AtualizarEstoquediminuir()
+    Dim ws As Worksheet, logSheet As Worksheet
+    Dim linhaSelecionada As Long
+    Dim quantidadeEntrada As Double
+    Dim estoqueAtual As Double
+    Dim saidasAtual As Double
+    Dim ultimaLinhaRelatorio As Long
+    Dim rngLog As Range
+    Dim timestamp As String
+
+    ' Define as planilhas
+    Set ws = ThisWorkbook.Sheets("Estoque")
+    Set logSheet = ThisWorkbook.Sheets("Relatorio")
+
+    ' Obter os valores das células da planilha "Gerenciador"
+    linhaSelecionada = ThisWorkbook.Sheets("Gerenciador").Range("B11").Value ' Número da linha que será atualizada
+    quantidadeEntrada = ThisWorkbook.Sheets("Gerenciador").Range("C11").Value ' Quantidade a ser subtraída
+
+    ' Verificar se a célula "QuantidadeEntrada" tem um valor numérico
+    If Not IsNumeric(quantidadeEntrada) Then
+        MsgBox "Por favor, insira uma quantidade válida!", vbExclamation, "Atenção"
+        Exit Sub
+    End If
+
+    ' Verificar se os campos de entrada estão preenchidos corretamente
+    If linhaSelecionada <= 0 Or quantidadeEntrada <= 0 Then
+        MsgBox "Por favor, insira um número de linha válido e uma quantidade maior que zero.", vbExclamation, "Atenção"
+        Exit Sub
+    End If
+
+    ' Verificar se a linha está dentro do intervalo válido da planilha
+    If linhaSelecionada > ws.Cells(Rows.Count, 2).End(xlUp).Row Then
+        MsgBox "Número da linha inválido! Certifique-se de que está dentro da lista.", vbCritical, "Erro"
+        Exit Sub
+    End If
+
+    ' Obter o valor do estoque atual da célula (coluna F)
+    estoqueAtual = ws.Cells(linhaSelecionada, 6).Value
+    ' Obter o valor das saídas atuais da célula (coluna E)
+    saidasAtual = ws.Cells(linhaSelecionada, 5).Value
+
+    ' Verificar se o estoque é suficiente para a subtração
+    If estoqueAtual < quantidadeEntrada Then
+        MsgBox "Estoque insuficiente para subtrair essa quantidade.", vbCritical, "Erro"
+        Exit Sub
+    End If
+
+    ' Atualizar a coluna "Saídas" (E) e "Estoque Atual" (F)
+    With ws
+        ' Subtrai a quantidade da coluna "Saídas" (coluna E)
+        If .Cells(linhaSelecionada, 5).Value = "" Then
+            .Cells(linhaSelecionada, 5).Value = quantidadeEntrada
+        Else
+            .Cells(linhaSelecionada, 5).Value = .Cells(linhaSelecionada, 5).Value + quantidadeEntrada
+        End If
+
+        ' Atualiza o estoque atual (coluna F)
+        .Cells(linhaSelecionada, 6).Value = .Cells(linhaSelecionada, 6).Value - quantidadeEntrada
+
+        ' Garante que os valores não fiquem negativos
+        If .Cells(linhaSelecionada, 6).Value < 0 Then .Cells(linhaSelecionada, 6).Value = 0
+        If .Cells(linhaSelecionada, 5).Value < 0 Then .Cells(linhaSelecionada, 5).Value = 0
+    End With
+
+    ' === REGISTRO NO RELATÓRIO ===
+    ' Encontra a última linha preenchida na planilha "Relatorio"
+    ultimaLinhaRelatorio = logSheet.Cells(logSheet.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Captura data e hora do evento
+    timestamp = Format(Now, "dd/mm/yyyy HH:MM:SS")
+
+    ' Adiciona a ação ao relatório no formato solicitado
+    logSheet.Cells(ultimaLinhaRelatorio, 1).Value = "Valor de entrada retirado (" & quantidadeEntrada & ") às " & timestamp
+
+    ' === FORMATAÇÃO DA LINHA DO RELATÓRIO ===
+    Set rngLog = logSheet.Cells(ultimaLinhaRelatorio, 1) ' Define a célula da linha adicionada
+
+    ' Aplica cor de fundo
+    rngLog.Interior.Color = RGB(245, 245, 245) ' Cinza claro
+
+    ' Aplica bordas
+    With rngLog.Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+        .ColorIndex = xlAutomatic
+    End With
+
+    ' Limpar as células de entrada (mantendo os intervalos fixos)
+    ThisWorkbook.Sheets("Gerenciador").Range("B11, C11").ClearContents
+
+    MsgBox "Estoque atualizado com sucesso!", vbInformation, "Sucesso"
+End Sub
+

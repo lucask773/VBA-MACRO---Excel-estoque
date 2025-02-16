@@ -1,0 +1,74 @@
+Sub AdicionarValor()
+    Dim ws As Worksheet, logSheet As Worksheet
+    Dim ultimaLinha As Long, ultimaLinhaRelatorio As Long
+    Dim valorB As Variant, valorC As Variant, valorD As Variant
+    Dim rng As Range, rngLog As Range
+    Dim timestamp As String
+
+    ' Define as planilhas
+    Set ws = ThisWorkbook.Sheets("Estoque")       ' Planilha de Estoque
+    Set logSheet = ThisWorkbook.Sheets("Relatorio") ' Planilha de Relatório
+
+    ' Obtém os valores das células de entrada na planilha "Gerenciador"
+    valorB = ThisWorkbook.Sheets("Gerenciador").Range("B5").Value ' Tipo do produto (Coluna B)
+    valorC = ThisWorkbook.Sheets("Gerenciador").Range("C5").Value ' Nome do produto (Coluna C)
+    valorD = ThisWorkbook.Sheets("Gerenciador").Range("D5").Value ' Quantidade (Coluna D)
+
+    ' Verifica se os campos estão preenchidos antes de adicionar
+    If Trim(valorB) = "" Or Trim(valorC) = "" Or Trim(valorD) = "" Then
+        MsgBox "Preencha todos os campos antes de adicionar!", vbExclamation, "Aviso"
+        Exit Sub
+    End If
+
+    ' Encontra a última linha preenchida na planilha "Estoque"
+    ultimaLinha = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Adiciona os valores à tabela de estoque na planilha "Estoque"
+    ws.Cells(ultimaLinha, 1).Value = valorB ' Tipo do produto (Coluna A)
+    ws.Cells(ultimaLinha, 2).Value = valorC ' Nome do produto (Coluna B)
+    ws.Cells(ultimaLinha, 3).Value = valorD ' Quantidade (Coluna C)
+    ws.Cells(ultimaLinha, 6).Value = valorD ' Quantidade repetida (Coluna F)
+
+    ' Formata a linha adicionada no estoque (cor e bordas)
+    Set rng = ws.Range(ws.Cells(ultimaLinha, 1), ws.Cells(ultimaLinha, 6))
+    rng.Interior.Color = RGB(242, 242, 242) ' Azul claro
+    rng.HorizontalAlignment = xlCenter
+    With rng.Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+        .ColorIndex = xlAutomatic
+    End With
+
+    ' === REGISTRO NO RELATÓRIO ===
+    ' Encontra a última linha preenchida na planilha "Relatorio"
+    ultimaLinhaRelatorio = logSheet.Cells(logSheet.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Captura data e hora do evento
+    timestamp = Format(Now, "dd/mm/yyyy HH:MM:SS")
+
+    ' Adiciona a ação ao relatório no formato solicitado
+    logSheet.Cells(ultimaLinhaRelatorio, 1).Value = "Produto tipo (" & valorB & ") foi adicionado com o nome (" & valorC & ") e quantidade (" & valorD & ") às " & timestamp
+
+    ' === FORMATAÇÃO DA LINHA DO RELATÓRIO ===
+    Set rngLog = logSheet.Cells(ultimaLinhaRelatorio, 1) ' Define a célula da linha adicionada
+
+    ' Aplica cor de fundo
+    rngLog.Interior.Color = RGB(245, 245, 245) ' Cinza claro
+
+    ' Aplica bordas
+    With rngLog.Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+        .ColorIndex = xlAutomatic
+    End With
+
+    ' Limpa os campos de entrada após adicionar
+    ThisWorkbook.Sheets("Gerenciador").Range("B5, C5, D5").ClearContents
+
+    ' Mensagem de sucesso
+    MsgBox "Valor adicionado ao estoque e registrado no relatório!", vbInformation, "Sucesso"
+
+    ' Seleciona uma célula fixa para evitar foco em células dinâmicas
+    ThisWorkbook.Sheets("Gerenciador").Range("B16").Select
+End Sub
+

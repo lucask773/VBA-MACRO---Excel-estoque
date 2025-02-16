@@ -1,0 +1,66 @@
+Sub RemoverLinhaEstoque()
+    Dim ws As Worksheet, logSheet As Worksheet
+    Dim linhaSelecionada As Long
+    Dim nomeProduto As String
+    Dim ultimaLinhaRelatorio As Long
+    Dim rngLog As Range
+    Dim timestamp As String
+
+    ' Define as planilhas
+    Set ws = ThisWorkbook.Sheets("Estoque")
+    Set logSheet = ThisWorkbook.Sheets("Relatorio")
+
+    ' Obter o número da linha selecionada da célula B18 da planilha "Gerenciador"
+    If IsNumeric(ThisWorkbook.Sheets("Gerenciador").Range("B18").Value) Then
+        linhaSelecionada = CLng(ThisWorkbook.Sheets("Gerenciador").Range("B18").Value) ' Número da linha a ser removida
+    Else
+        MsgBox "A célula B18 não contém um número válido. Por favor, insira um número de linha válido.", vbCritical, "Erro"
+        Exit Sub
+    End If
+
+    ' Verificar se a linha é válida
+    If linhaSelecionada <= 0 Or linhaSelecionada > ws.Cells(ws.Rows.Count, 6).End(xlUp).Row Then ' Usando a coluna F para o limite
+        MsgBox "Número da linha inválido! Certifique-se de que está dentro da lista.", vbCritical, "Erro"
+        Exit Sub
+    End If
+
+    ' Obter o nome do produto antes de excluir (coluna B)
+    nomeProduto = ws.Cells(linhaSelecionada, 2).Value
+
+    ' Confirmar remoção
+    If MsgBox("Tem certeza que deseja remover o item '" & nomeProduto & "'?", vbYesNo + vbExclamation, "Confirmação") = vbNo Then
+        Exit Sub
+    End If
+
+    ' Remover a linha inteira
+    ws.Rows(linhaSelecionada).Delete Shift:=xlUp
+
+    ' === REGISTRO NO RELATÓRIO ===
+    ' Encontra a última linha preenchida na planilha "Relatorio"
+    ultimaLinhaRelatorio = logSheet.Cells(logSheet.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Captura data e hora do evento
+    timestamp = Format(Now, "dd/mm/yyyy HH:MM:SS")
+
+    ' Adiciona a ação ao relatório no formato solicitado
+    logSheet.Cells(ultimaLinhaRelatorio, 1).Value = "Item removido (" & nomeProduto & ") às " & timestamp
+
+    ' === FORMATAÇÃO DA LINHA DO RELATÓRIO ===
+    Set rngLog = logSheet.Cells(ultimaLinhaRelatorio, 1) ' Define a célula da linha adicionada
+
+    ' Aplica cor de fundo
+    rngLog.Interior.Color = RGB(245, 245, 245) ' Cinza claro
+
+    ' Aplica bordas
+    With rngLog.Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+        .ColorIndex = xlAutomatic
+    End With
+
+    ' Limpar a célula de seleção de linha
+    ThisWorkbook.Sheets("Gerenciador").Range("B18").ClearContents
+
+    MsgBox "Item removido e registrado no relatório!", vbInformation, "Sucesso"
+End Sub
+

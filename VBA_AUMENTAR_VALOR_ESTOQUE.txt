@@ -1,0 +1,74 @@
+Sub AtualizarEstoquePorLinha()
+    Dim ws As Worksheet, logSheet As Worksheet
+    Dim linhaSelecionada As Long
+    Dim quantidadeEntrada As Double
+    Dim ultimaLinhaRelatorio As Long
+    Dim timestamp As String
+    Dim rng As Range
+
+    ' Define as planilhas
+    Set ws = ThisWorkbook.Sheets("Estoque")
+    Set logSheet = ThisWorkbook.Sheets("Relatorio")
+
+    ' Obter os valores das células da planilha "Gerenciador"
+    linhaSelecionada = ThisWorkbook.Sheets("Gerenciador").Range("B11").Value ' Número da linha que será atualizada
+    quantidadeEntrada = ThisWorkbook.Sheets("Gerenciador").Range("C11").Value ' Quantidade a ser adicionada
+
+    ' Verificar se os campos de entrada estão preenchidos corretamente
+    If linhaSelecionada <= 0 Or quantidadeEntrada <= 0 Then
+        MsgBox "Por favor, insira um número de linha válido e uma quantidade maior que zero.", vbExclamation, "Atenção"
+        Exit Sub
+    End If
+
+    ' Verificar se a linha está dentro do intervalo válido da planilha
+    If linhaSelecionada > ws.Cells(Rows.Count, 2).End(xlUp).Row Then
+        MsgBox "Número da linha inválido! Certifique-se de que está dentro da lista.", vbCritical, "Erro"
+        Exit Sub
+    End If
+
+    ' === ATUALIZAÇÃO DO ESTOQUE ===
+    With ws
+        ' Se a célula de entradas estiver vazia, apenas atribui o valor
+        If .Cells(linhaSelecionada, 4).Value = "" Then
+            .Cells(linhaSelecionada, 4).Value = quantidadeEntrada
+        Else
+            .Cells(linhaSelecionada, 4).Value = .Cells(linhaSelecionada, 4).Value + quantidadeEntrada
+        End If
+
+        ' Atualiza o estoque atual (coluna F)
+        .Cells(linhaSelecionada, 6).Value = .Cells(linhaSelecionada, 6).Value + quantidadeEntrada
+    End With
+
+    ' === REGISTRO NO RELATÓRIO ===
+    ' Encontra a última linha preenchida na planilha "Relatorio"
+    ultimaLinhaRelatorio = logSheet.Cells(logSheet.Rows.Count, 1).End(xlUp).Row + 1
+
+    ' Captura data e hora do evento
+    timestamp = Format(Now, "dd/mm/yyyy HH:MM:SS")
+
+    ' Adiciona a ação ao relatório
+    logSheet.Cells(ultimaLinhaRelatorio, 1).Value = "Valor de entrada adicionado (quantidade: " & quantidadeEntrada & ") às " & timestamp
+
+    ' === FORMATAÇÃO DA LINHA DO RELATÓRIO ===
+    Set rng = logSheet.Cells(ultimaLinhaRelatorio, 1) ' Define a célula da linha adicionada
+
+    ' Aplica cor de fundo
+    rng.Interior.Color = RGB(245, 245, 245) ' Cinza claro
+
+    ' Aplica bordas
+    With rng.Borders
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+        .ColorIndex = xlAutomatic
+    End With
+
+    ' Limpar as células de entrada
+    ThisWorkbook.Sheets("Gerenciador").Range("B11, C11").ClearContents
+
+    ' Mensagem de sucesso
+    MsgBox "Estoque atualizado e registrado no relatório!", vbInformation, "Sucesso"
+
+    ' Seleciona uma célula fixa para evitar seleção incorreta
+    ThisWorkbook.Sheets("Gerenciador").Range("B16").Select
+End Sub
+
